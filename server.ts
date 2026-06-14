@@ -6,7 +6,13 @@ import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+if (!process.env.VITE_YOUTUBE_API_KEY && process.env.YOUTUBE_API_KEY) {
+  process.env.VITE_YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+}
+if (!process.env.YOUTUBE_API_KEY && process.env.VITE_YOUTUBE_API_KEY) {
+  process.env.YOUTUBE_API_KEY = process.env.VITE_YOUTUBE_API_KEY;
+}
 
 // English Stopwords List for job matching NLP engine
 const STOPWORDS = new Set([
@@ -629,7 +635,7 @@ Do not write any markdown code block, enclosing tags, or extra notes. Return ONL
   app.post("/api/research/youtube", async (req, res) => {
     try {
       const { topic } = req.body;
-      const apiKey = process.env.YOUTUBE_API_KEY || "";
+      const apiKey = process.env.YOUTUBE_API_KEY || process.env.VITE_YOUTUBE_API_KEY || "";
 
       const searchQuery = (topic || '').trim();
       if (!searchQuery) {
