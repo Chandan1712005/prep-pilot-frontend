@@ -4,18 +4,5 @@
     "installCommand": "npm ci",
     "env": {
         "NODE_ENV": "production"
-    },
-    "functions": {
-        "dist/server.cjs": {
-            "runtime": "nodejs20.x",
-            "memory": 1024,
-            "maxDuration": 60
-        }
-    },
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/dist/server.cjs"
-        }
-    ]
+    }
 }
