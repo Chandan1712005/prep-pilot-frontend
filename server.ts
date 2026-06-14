@@ -184,9 +184,21 @@ async function generateAIContent(
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod';
 
   app.use(express.json());
+
+  app.post('/api/users', (req, res) => {
+    const { clerkid } = req.body || {};
+    if (!clerkid) {
+      return res.status(400).json({ success: false, error: 'clerkid is required' });
+    }
+
+    console.log('[User Sync] Received clerkid:', clerkid);
+    return res.json({ success: true, clerkid });
+  });
 
   // Load and Index CSV Jobs on Startup
   try {
@@ -1112,7 +1124,7 @@ Do not write any markdown code block, enclosing tags, or extra notes. Return ONL
   });
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -1126,9 +1138,32 @@ Do not write any markdown code block, enclosing tags, or extra notes. Return ONL
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  const MAX_PORT_TRIES = 5;
+  async function listenOnPort(port: number, attempt = 0): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const server = app.listen(port, '0.0.0.0', () => {
+        console.log(`Server running on http://localhost:${port}`);
+        resolve();
+      });
+
+      server.on('error', (err: any) => {
+        if (err?.code === 'EADDRINUSE' && !process.env.PORT && attempt < MAX_PORT_TRIES) {
+          const nextPort = port + 1;
+          console.warn(`Port ${port} is in use. Trying port ${nextPort}...`);
+          listenOnPort(nextPort, attempt + 1).then(resolve).catch(reject);
+        } else {
+          reject(err);
+        }
+      });
+    });
+  }
+
+  try {
+    await listenOnPort(PORT);
+  } catch (error: any) {
+    console.error(`Failed to bind server to port ${PORT}:`, error.message || error);
+    process.exit(1);
+  }
 }
 
 startServer();

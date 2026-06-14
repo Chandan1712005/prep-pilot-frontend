@@ -30,8 +30,8 @@ function SyncUserWithBackend() {
   const { user, isLoaded } = useUser();
   useEffect(() => {
     if (isLoaded && user) {
-      // Sync strictly clerkid to the main backend server on port 5000
-      fetch('http://localhost:5000/api/users', {
+      // Sync clerk id with the backend on the current origin when deployed.
+      fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
